@@ -1,6 +1,9 @@
 #include "pch.h"
 #include "simulator.h"
 #include "UserProgram.h"
+#include "main_form.h"
+
+using namespace UVSimForm;
 
 void UserProgram::cliProgramLoad(Simulator* sim) {
 	int memLocation = 0;
@@ -81,7 +84,8 @@ void UserProgram::fileProgramLoad(Simulator* sim) {
 
 };
 
-void UserProgram::loadProgram(Simulator* sim, vector<string> instructions) {
+void UserProgram::loadProgram(Simulator* sim, vector<string> instructions, System::Windows::Forms::RichTextBox^ output_txt) {
+	output_txt->Text = "This is a string";
 	std::string nextInstruction;
 	for (int i = 0; i < instructions.size(); i++) {
 		nextInstruction = instructions.at(i);

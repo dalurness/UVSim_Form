@@ -14,6 +14,6 @@ public:
 	UserProgram() {};
 	void cliProgramLoad(Simulator* sim);
 	void fileProgramLoad(Simulator* sim);
-	void loadProgram(Simulator* sim, vector<string> instructions);
+	void loadProgram(Simulator* sim, vector<string> instructions, System::Windows::Forms::RichTextBox^ output_txt);
 };
 

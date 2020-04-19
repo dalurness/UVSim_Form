@@ -1,9 +1,13 @@
 #include "pch.h"
-#include "simulator.h" 
+#include "simulator.h"
+#include "main_form.h"
 
+#include <msclr\marshal_cppstd.h>
 #include <iostream>
 #include <string>
 #include <stdexcept>
+
+using namespace UVSimForm;
 
 //Dallin
 void Simulator::loadCommandIntoMemory(std::string command) {
@@ -48,41 +52,42 @@ void Simulator::clearLast() {
 	}
 }
 
-//Shaun & Dallin
-void Simulator::printMemory() {
+void Simulator::printMemory(System::Windows::Forms::RichTextBox^ output_txt) {
 	//Print Register contents.
-	std::wcout << "REGISTERS: " << std::endl;
-	std::cout << "Accumulator: " << this->Accumulator << std::endl;
-	std::cout << "Instruction Counter: " << this->InstructionCounter << std::endl;
-	std::cout << "Instruction Register: " << this->InstructionRegister << std::endl;
-	std::cout << "Operation Code: " << this->OperationCode << std::endl;
-	std::cout << "Operand: " << this->Operand << std::endl << std::endl;
+	output_txt->AppendText("REGISTERS: \n");
+	output_txt->AppendText("Accumulator: " + this->Accumulator + "\n");
+	output_txt->AppendText("Instruction Counter: " + this->InstructionCounter + "\n");
+	String^ managedInstReg = gcnew String(this->InstructionRegister.c_str());
+	output_txt->AppendText("Instruction Register: " + managedInstReg + "\n");
+	output_txt->AppendText("Operand Code: " + this->OperationCode + "\n");
+	output_txt->AppendText("Operand: " + this->Operand + "\n\n");
 
 	//Print Memory Table (10x10).
-	std::cout << "MEMORY: " << std::endl;
+	output_txt->AppendText("MEMORY: \n");
 
-	std::cout << "  ";
+	//output_txt->AppendText(" ");
 	for (int i = 0; i < 10; i++) {
-		std::cout << "     ";
+		output_txt->AppendText("        ");
 		if (i < 10)
-			std::wcout << "0" << i;
+			output_txt->AppendText("0" + i);
 	}
 
 	int j = 0;
 
 	for (int i = 0; i < (int)this->memory.size(); ++i) {
 		if (i % 10 == 0 /*&& i != 0*/) {
-			std::cout << std::endl;
+			output_txt->AppendText("\n");
 			if (i < 10)
-				std::wcout << "0";
-			std::cout << j << "  ";
+				output_txt->AppendText("0");
+			output_txt->AppendText(j + "  ");
 			j += 10;
 		}
-		//else if (i % 5 == 0 && i != 0)
-			//std::cout << "   ";
-		std::cout << this->memory.at(i) << "  ";
+
+		std::string vectMemory = this->memory.at(i);
+		String^ managedVectMemory = gcnew String(vectMemory.c_str());
+		output_txt->AppendText(managedVectMemory + "  ");
 	}
-	std::wcout << std::endl << std::endl;
+	output_txt->AppendText("\n\n");
 }
 
 //Kristen
@@ -103,7 +108,7 @@ bool Simulator::scanForSeparator(int& memoryLocation) {
 }
 
 //Kristen
-void Simulator::executeProgram() {
+void Simulator::executeProgram(System::Windows::Forms::RichTextBox^ output_txt) {
 	//Fill vector with emtpy data to fill table.
 	for (size_t i = this->memory.size(); i < SIZE_OF_MEMORY; i++) {
 		this->memory.push_back("00000");
@@ -113,7 +118,7 @@ void Simulator::executeProgram() {
 		//if (nextCommand.substr(0, 3) == ("0" + std::to_string(HALT)))
 		//return;
 
-		bool goOn = this->executeInstruction();
+		bool goOn = this->executeInstruction(output_txt);
 		this->InstructionCounter++;
 		if (!goOn)
 			return;
@@ -121,18 +126,15 @@ void Simulator::executeProgram() {
 }
 
 //Dallin
-bool Simulator::executeInstruction() {
+bool Simulator::executeInstruction(System::Windows::Forms::RichTextBox^ output_txt) {
 	int memoryLocation = stoi(this->InstructionRegister.substr(3, 5));
 	this->OperationCode = stoi(this->InstructionRegister.substr(1, 2));
 
 	//check if command is positive or negative
 	switch (this->InstructionRegister[0]) {
 	case '1':
-		//do some negative command ish
 		break;
 	case '0':
-		//do some positive command ish
-
 		switch (this->OperationCode) {
 		case EXTRACT:
 			this->OperationCode = stoi(this->InstructionRegister.substr(3, 5));
@@ -140,10 +142,10 @@ bool Simulator::executeInstruction() {
 			this->InstructionRegister = this->memory.at(this->InstructionCounter);
 			memoryLocation = stoi(this->InstructionRegister.substr(1, 5));
 		case READ:
-			this->read(memoryLocation);
+			this->read(memoryLocation, output_txt);
 			break;
 		case WRITE:
-			this->write(memoryLocation);
+			this->write(memoryLocation, output_txt);
 			break;
 		case LOAD:
 			this->load(memoryLocation);
@@ -175,17 +177,18 @@ bool Simulator::executeInstruction() {
 		case HALT:
 			if (!scanForSeparator(memoryLocation)) {
 				this->printOutDetails();
+				this->printMemory(output_txt);
 				return (false);
 			}
 			break;
 		case MEMDUMP:
-			this->memDump();
+			this->memDump(output_txt);
 			break;
 		case BREAK:
-			this->breakExecution();
+			this->breakExecution(output_txt);
 			break;
 		case CONTINUE:
-			this->continueExecution();
+			this->continueExecution(output_txt);
 			break;
 		case PROGSEP:
 			break;
@@ -201,11 +204,18 @@ bool Simulator::executeInstruction() {
 }
 
 //Dallin
-void Simulator::read(int memoryLocation) {
+void Simulator::read(int memoryLocation, System::Windows::Forms::RichTextBox^ output_txt) {
+
+	UVSimForm::output output;
+	output.ShowDialog();
+	output.Show();
+
+
 	bool isNumber = false;
 	std::string stringNumber;
 	while (!isNumber) {
-		std::cout << "Please enter a number four digits or less to insert into location " << memoryLocation << ": ";
+		output_txt->AppendText("Please enter a number four digits or less to insert into location " + memoryLocation + ": ");
+		//important
 		std::cin >> stringNumber;
 
 		isNumber = true;
@@ -220,7 +230,7 @@ void Simulator::read(int memoryLocation) {
 		}
 		if (isNumber && (stoi(stringNumber) > 9999 || stoi(stringNumber) < -9999)) {
 			isNumber = false;
-			std::cout << std::endl << "Number needs to be four digits or less" << std::endl << std::endl;
+			output_txt->AppendText("Number needs to be four digits or less \n\n");
 		}
 	}
 	//take out sign
@@ -293,18 +303,21 @@ void Simulator::divide(int memoryLocation) {
 
 //Kristen
 //Write word from memoryLocation to console
-void Simulator::write(int memoryLocation) {
+void Simulator::write(int memoryLocation, System::Windows::Forms::RichTextBox^ output_txt) {
+	String^ managedMemLoc = gcnew String(this->memory.at(memoryLocation).c_str());
+	output_txt->AppendText(managedMemLoc + "\n");
 	std::cout << this->memory.at(memoryLocation);
 	std::cout << std::endl;
 }
 
 //Kristen
 //pause the execution
-void Simulator::breakExecution() {
+void Simulator::breakExecution(System::Windows::Forms::RichTextBox^ output_txt) {
 	std::string cmd = "";
 
 	while (cmd != "+5100") {
-		std::cout << "Please enter in another instruction (to continue, enter +5100): ";
+		//important
+		output_txt->AppendText("Execution Paused, (to continue click 'Continue Execution'): ");
 		std::cin >> cmd;
 
 		char sign = cmd[0];
@@ -330,16 +343,14 @@ void Simulator::breakExecution() {
 			exit(0);
 		}
 		this->InstructionRegister = trueCmd;
-		this->executeInstruction();
+		this->executeInstruction(output_txt);
 	}
 }
 
 //Kristen
 //continue executing
-void Simulator::continueExecution() {
-	std::cout << std::endl;
-	std::cout << "~ Continuing Execution ~" << std::endl;
-	std::cout << std::endl;
+void Simulator::continueExecution(System::Windows::Forms::RichTextBox^ output_txt) {
+	output_txt->AppendText("\n ~ Continuing Execution ~ \n");
 }
 
 //Dallin
@@ -379,4 +390,8 @@ void Simulator::branchZero(int memoryLocation) {
 	if (this->Accumulator == 0) {
 		this->InstructionCounter = memoryLocation - 1;
 	}
+}
+
+void Simulator::memDump(System::Windows::Forms::RichTextBox^ output_txt) {
+	printMemory(output_txt);
 }
