@@ -22,6 +22,7 @@ public:
 	void clearProgram();
 	void clearLast();
 	bool scanForSeparator(int& memoryLocation);
+	void continueExecutionFromForm(int instruction);
 private:
 	//registers
 	int Accumulator = 0;

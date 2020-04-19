@@ -9,11 +9,6 @@ void UserProgram::cliProgramLoad(Simulator* sim) {
 	int memLocation = 0;
 	std::string cmd;
 
-	std::cout << "| Please enter your program one instruction at a time.   |" << std::endl;
-	std::cout << "| The memory location of your command will be displayed. |" << std::endl;
-	std::cout << "| Enter /0 to stop entering your program.                |" << std::endl;
-	std::cout << "==========================================================" << std::endl;
-
 	while (true) {
 		if (memLocation < 10) {
 			std::cout << "0" << memLocation << " : ";
@@ -85,7 +80,6 @@ void UserProgram::fileProgramLoad(Simulator* sim) {
 };
 
 void UserProgram::loadProgram(Simulator* sim, vector<string> instructions, System::Windows::Forms::RichTextBox^ output_txt) {
-	output_txt->Text = "This is a string";
 	std::string nextInstruction;
 	for (int i = 0; i < instructions.size(); i++) {
 		nextInstruction = instructions.at(i);

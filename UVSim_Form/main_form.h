@@ -72,18 +72,6 @@ namespace UVSimForm {
 	private: System::Windows::Forms::TextBox^ input_txt;
 	private: System::Windows::Forms::Button^ submit_btn;
 	private: System::Windows::Forms::Button^ unselect_btn;
-	private: System::Windows::Forms::Button^ continue_btn;
-
-
-
-
-
-
-
-
-
-
-
 	private: System::ComponentModel::IContainer^ components;
 	private:
 		/// <summary>
@@ -123,7 +111,6 @@ namespace UVSimForm {
 			this->input_txt = (gcnew System::Windows::Forms::TextBox());
 			this->submit_btn = (gcnew System::Windows::Forms::Button());
 			this->unselect_btn = (gcnew System::Windows::Forms::Button());
-			this->continue_btn = (gcnew System::Windows::Forms::Button());
 			this->menu_strip->SuspendLayout();
 			this->error_box->SuspendLayout();
 			this->SuspendLayout();
@@ -338,23 +325,12 @@ namespace UVSimForm {
 			this->unselect_btn->UseVisualStyleBackColor = true;
 			this->unselect_btn->Click += gcnew System::EventHandler(this, &main_form::unselect_btn_Click);
 			// 
-			// continue_btn
-			// 
-			this->continue_btn->Location = System::Drawing::Point(636, 407);
-			this->continue_btn->Name = L"continue_btn";
-			this->continue_btn->Size = System::Drawing::Size(141, 23);
-			this->continue_btn->TabIndex = 22;
-			this->continue_btn->Text = L"Continue Execution";
-			this->continue_btn->UseVisualStyleBackColor = true;
-			this->continue_btn->Click += gcnew System::EventHandler(this, &main_form::continue_btn_Click);
-			// 
 			// main_form
 			// 
 			this->AutoScaleDimensions = System::Drawing::SizeF(8, 16);
 			this->AutoScaleMode = System::Windows::Forms::AutoScaleMode::Font;
 			this->ClientSize = System::Drawing::Size(1184, 541);
 			this->ContextMenuStrip = this->menu_strip;
-			this->Controls->Add(this->continue_btn);
 			this->Controls->Add(this->unselect_btn);
 			this->Controls->Add(this->submit_btn);
 			this->Controls->Add(this->input_txt);
@@ -429,13 +405,13 @@ namespace UVSimForm {
 	//add button
 	private: System::Void add_button_Click(System::Object^ sender, System::EventArgs^ e) {
 		validate();
-		//String^ lineNumber = System::Convert::ToString(numberedLineCount) + ": ";
+		String^ lineNumber = System::Convert::ToString(numberedLineCount) + ": ";
 		String^ instruction = instruction_txt->Text;
 		String^ location = location_txt->Text;
 		String^ sign = sign_txt->Text;
-		listBox->Items->Add(/*lineNumber +*/ sign + instruction + location);
+		listBox->Items->Add(lineNumber + sign + instruction + location);
 		clearText();
-		//numberedLineCount++;
+		numberedLineCount++;
 	}
 
 	//edit button
@@ -464,12 +440,12 @@ namespace UVSimForm {
 			Object ^itemObj = listBox->Items[i];
 			String ^item = itemObj->ToString();
 			string unmanaged = msclr::interop::marshal_as<string>(item);
-			//unmanaged = unmanaged.substr(unmanaged.size() - 5, unmanaged.size());
+			unmanaged = unmanaged.substr(unmanaged.size() - 5, unmanaged.size());
 			instructions.push_back(unmanaged);
 			simulator.loadCommandIntoMemory(unmanaged);
 
 		}		
-		//userProgram.loadProgram(&simulator, instructions, output_txt);
+		userProgram.loadProgram(&simulator, instructions, output_txt);
 		simulator.executeProgram(output_txt);
 	}
 
@@ -483,7 +459,7 @@ namespace UVSimForm {
 		edit_button->Enabled = false;
 		unselect_btn->Enabled = false;
 		add_button->Enabled = true;
-		//numberedLineCount--;
+		numberedLineCount--;
 	}
 
 	private: System::Void listBox_SelectedIndexChanged(System::Object^ sender, System::EventArgs^ e) {
@@ -516,11 +492,12 @@ namespace UVSimForm {
 		add_button->Enabled = true;
 		unselect_btn->Enabled = false;
 	}
+
 	private: System::Void submit_btn_Click(System::Object^ sender, System::EventArgs^ e) {
-		//simulator.continueExecution();
-	}
-	private: System::Void continue_btn_Click(System::Object^ sender, System::EventArgs^ e) {
-		simulator.executeProgram(output_txt);
+		String^ instruction = input_txt->Text;
+		std::string unmanagedInstruction = msclr::interop::marshal_as<std::string>(instruction);
+		int intInstruction = std::stoi(unmanagedInstruction);
+		simulator.continueExecutionFromForm(intInstruction);
 	}
 };
 }

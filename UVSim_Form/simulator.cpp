@@ -214,7 +214,7 @@ void Simulator::read(int memoryLocation, System::Windows::Forms::RichTextBox^ ou
 	bool isNumber = false;
 	std::string stringNumber;
 	while (!isNumber) {
-		output_txt->AppendText("Please enter a number four digits or less to insert into location " + memoryLocation + ": ");
+		output_txt->AppendText("Please enter a number four digits or less in the text box below to insert into location " + memoryLocation + ": ");
 		//important
 		std::cin >> stringNumber;
 
@@ -317,7 +317,7 @@ void Simulator::breakExecution(System::Windows::Forms::RichTextBox^ output_txt) 
 
 	while (cmd != "+5100") {
 		//important
-		output_txt->AppendText("Execution Paused, (to continue click 'Continue Execution'): ");
+		output_txt->AppendText("Execution Paused, (to continue, enter +5100): ");
 		std::cin >> cmd;
 
 		char sign = cmd[0];
@@ -394,4 +394,8 @@ void Simulator::branchZero(int memoryLocation) {
 
 void Simulator::memDump(System::Windows::Forms::RichTextBox^ output_txt) {
 	printMemory(output_txt);
+}
+
+void Simulator::continueExecutionFromForm(int instruction) {
+
 }
