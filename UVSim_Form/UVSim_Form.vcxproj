@@ -126,6 +126,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ResourceCompile Include="app.rc" />
+    <ResourceCompile Include="icon.rc" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="main_form.h">
@@ -133,6 +134,7 @@
     </ClInclude>
     <ClInclude Include="pch.h" />
     <ClInclude Include="Resource.h" />
+    <ClInclude Include="resource1.h" />
     <ClInclude Include="simulator.h" />
     <ClInclude Include="UserProgram.h" />
   </ItemGroup>
@@ -149,6 +151,7 @@
     <ClCompile Include="UserProgram.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <Image Include="..\..\..\..\wolverine.png" />
     <Image Include="app.ico" />
   </ItemGroup>
   <ItemGroup>
@@ -162,6 +165,10 @@
     <EmbeddedResource Include="main_form.resx">
       <DependentUpon>main_form.h</DependentUpon>
     </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="app.aps" />
+    <None Include="icon.aps" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

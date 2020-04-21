@@ -17,13 +17,20 @@ public:
 	void printMemory(System::Windows::Forms::RichTextBox^ output_txt);
 	void loadCommandIntoMemory(std::string command);
 	void loadProgramFromFile(std::string filename) {};
-	void executeProgram(System::Windows::Forms::RichTextBox^ output_txt);
-	bool executeInstruction(System::Windows::Forms::RichTextBox^ output_txt);
+	int executeProgram(System::Windows::Forms::RichTextBox^ output_txt, int instructionNumber, System::Windows::Forms::GroupBox^ input_groupbox, System::Windows::Forms::GroupBox^ break_groupbox);
+	bool executeInstruction(System::Windows::Forms::RichTextBox^ output_txt, System::Windows::Forms::GroupBox^ input_groupbox, System::Windows::Forms::GroupBox^ break_groupbox);
 	void clearProgram();
 	void clearLast();
 	bool scanForSeparator(int& memoryLocation);
-	void continueExecutionFromForm(int instruction);
-private:
+	void storeAfterRead(int value);
+
+	bool breakExecution(System::Windows::Forms::RichTextBox^ output_txt, System::Windows::Forms::GroupBox^ input_groupbox, System::Windows::Forms::GroupBox^ break_groupbox, std::string instruction); //pause the execution
+
+
+	int readLocationNum = 0;
+	//memory
+	std::vector<std::string> memory = {};
+
 	//registers
 	int Accumulator = 0;
 	int InstructionCounter = 0;
@@ -31,11 +38,12 @@ private:
 	int OperationCode = 0;
 	int Operand = 0;
 
+private:
 	//memory
-	std::vector<std::string> memory = {};
+	//std::vector<std::string> memory = {};
 
 	//internal functions
-	void read(int memoryLocation, System::Windows::Forms::RichTextBox^ output_txt); //Read a word from the keyboard into a specific location in memory.
+	void read(int memoryLocation, System::Windows::Forms::RichTextBox^ output_txt, System::Windows::Forms::GroupBox^ input_groupbox /*, string stringNumber*/); //Read a word from the keyboard into a specific location in memory.
 	void write(int memoryLocation, System::Windows::Forms::RichTextBox^ output_txt); //Write word from memoryLocation to console
 	void load(int memoryLocation); //Load from memoryLocation to Accumulator
 	void store(int memoryLocation); //Store from Accumulator to memoryLocation
@@ -48,7 +56,7 @@ private:
 	void branchZero(int memoryLocation); //branch at zero
 	void halt() {}; //end program
 	void memDump(System::Windows::Forms::RichTextBox^ output_txt); //dump memory onto screen for debugging
-	void breakExecution(System::Windows::Forms::RichTextBox^ output_txt); //pause the execution
+	//void breakExecution(System::Windows::Forms::RichTextBox^ output_txt, System::Windows::Forms::GroupBox^ input_groupbox); //pause the execution
 	void continueExecution(System::Windows::Forms::RichTextBox^ output_txt); //continue executing
 
 	//extra functions

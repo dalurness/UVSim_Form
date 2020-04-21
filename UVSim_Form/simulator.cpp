@@ -73,12 +73,12 @@ void Simulator::printMemory(System::Windows::Forms::RichTextBox^ output_txt) {
 	}
 
 	int j = 0;
-
 	for (int i = 0; i < (int)this->memory.size(); ++i) {
 		if (i % 10 == 0 /*&& i != 0*/) {
 			output_txt->AppendText("\n");
-			if (i < 10)
+			if (i < 10) {
 				output_txt->AppendText("0");
+			}
 			output_txt->AppendText(j + "  ");
 			j += 10;
 		}
@@ -108,8 +108,10 @@ bool Simulator::scanForSeparator(int& memoryLocation) {
 }
 
 //Kristen
-void Simulator::executeProgram(System::Windows::Forms::RichTextBox^ output_txt) {
+int Simulator::executeProgram(System::Windows::Forms::RichTextBox^ output_txt, int instructionNumber, System::Windows::Forms::GroupBox^ input_groupbox, System::Windows::Forms::GroupBox^ break_groupbox) {
 	//Fill vector with emtpy data to fill table.
+	this->InstructionCounter = instructionNumber;
+
 	for (size_t i = this->memory.size(); i < SIZE_OF_MEMORY; i++) {
 		this->memory.push_back("00000");
 	}
@@ -118,15 +120,16 @@ void Simulator::executeProgram(System::Windows::Forms::RichTextBox^ output_txt) 
 		//if (nextCommand.substr(0, 3) == ("0" + std::to_string(HALT)))
 		//return;
 
-		bool goOn = this->executeInstruction(output_txt);
+		bool goOn = this->executeInstruction(output_txt, input_groupbox, break_groupbox);
 		this->InstructionCounter++;
 		if (!goOn)
-			return;
+			break;
 	}
+	return this->InstructionCounter;
 }
 
 //Dallin
-bool Simulator::executeInstruction(System::Windows::Forms::RichTextBox^ output_txt) {
+bool Simulator::executeInstruction(System::Windows::Forms::RichTextBox^ output_txt, System::Windows::Forms::GroupBox^ input_groupbox, System::Windows::Forms::GroupBox^ break_groupbox) {
 	int memoryLocation = stoi(this->InstructionRegister.substr(3, 5));
 	this->OperationCode = stoi(this->InstructionRegister.substr(1, 2));
 
@@ -142,7 +145,9 @@ bool Simulator::executeInstruction(System::Windows::Forms::RichTextBox^ output_t
 			this->InstructionRegister = this->memory.at(this->InstructionCounter);
 			memoryLocation = stoi(this->InstructionRegister.substr(1, 5));
 		case READ:
-			this->read(memoryLocation, output_txt);
+			input_groupbox->Visible = true;
+			output_txt->AppendText("Please enter a number four digits or less in the text box below to insert into location " + memoryLocation + ": \n");
+			return false;
 			break;
 		case WRITE:
 			this->write(memoryLocation, output_txt);
@@ -185,7 +190,9 @@ bool Simulator::executeInstruction(System::Windows::Forms::RichTextBox^ output_t
 			this->memDump(output_txt);
 			break;
 		case BREAK:
-			this->breakExecution(output_txt);
+			break_groupbox->Visible = true;
+			output_txt->AppendText("Execution Paused, (to continue, enter +5100): \n");
+			return false;
 			break;
 		case CONTINUE:
 			this->continueExecution(output_txt);
@@ -204,29 +211,24 @@ bool Simulator::executeInstruction(System::Windows::Forms::RichTextBox^ output_t
 }
 
 //Dallin
-void Simulator::read(int memoryLocation, System::Windows::Forms::RichTextBox^ output_txt) {
-
-	UVSimForm::output output;
-	output.ShowDialog();
-	output.Show();
-
-
+void Simulator::read(int memoryLocation, System::Windows::Forms::RichTextBox^ output_txt, System::Windows::Forms::GroupBox^ input_groupbox/*, string stringNumber*/) {
 	bool isNumber = false;
+	
 	std::string stringNumber;
 	while (!isNumber) {
-		output_txt->AppendText("Please enter a number four digits or less in the text box below to insert into location " + memoryLocation + ": ");
-		//important
-		std::cin >> stringNumber;
-
 		isNumber = true;
 		if (stringNumber[0] == '+' || stringNumber[0] == '-') {
 			for (int i = 1; i < stringNumber.size(); ++i) {
-				if (!isdigit(stringNumber[i])) { isNumber = false; };
+				if (!isdigit(stringNumber[i])) { 
+					isNumber = false; 
+				};
 			}
 		}
 		else {
 			for (char x : stringNumber)
-				if (!isdigit(x)) { isNumber = false; };
+				if (!isdigit(x)) { 
+					isNumber = false; 
+				};
 		}
 		if (isNumber && (stoi(stringNumber) > 9999 || stoi(stringNumber) < -9999)) {
 			isNumber = false;
@@ -246,7 +248,19 @@ void Simulator::read(int memoryLocation, System::Windows::Forms::RichTextBox^ ou
 	if (sign == '-')
 		stringNumber[0] = '1';
 	//insert number into memory location
-	this->memory.at(memoryLocation) = stringNumber;
+	this->readLocationNum = memoryLocation;
+}
+
+
+void Simulator::storeAfterRead(int value) {
+	std::string stringValue = std::to_string(value);
+	if (value >= 0) {
+		stringValue = "0" + stringValue;
+	}
+	else {
+		stringValue = "1" + stringValue;
+	}
+	this->memory.at(readLocationNum) = stringValue;
 }
 
 //Dallin
@@ -306,45 +320,50 @@ void Simulator::divide(int memoryLocation) {
 void Simulator::write(int memoryLocation, System::Windows::Forms::RichTextBox^ output_txt) {
 	String^ managedMemLoc = gcnew String(this->memory.at(memoryLocation).c_str());
 	output_txt->AppendText(managedMemLoc + "\n");
-	std::cout << this->memory.at(memoryLocation);
-	std::cout << std::endl;
 }
 
 //Kristen
 //pause the execution
-void Simulator::breakExecution(System::Windows::Forms::RichTextBox^ output_txt) {
-	std::string cmd = "";
+bool Simulator::breakExecution(System::Windows::Forms::RichTextBox^ output_txt, System::Windows::Forms::GroupBox^ input_groupbox, System::Windows::Forms::GroupBox^ break_groupbox, std::string instruction) {
+	std::string cmd = instruction;
+	//if (instruction >= 0) {
+	//	cmd = "0" + cmd;
+	//}
+	//else {
+	//	cmd = "1" + cmd;
+	//}
 
-	while (cmd != "+5100") {
-		//important
-		output_txt->AppendText("Execution Paused, (to continue, enter +5100): ");
-		std::cin >> cmd;
+	if (cmd == "+5100") {
+		continueExecution(output_txt);
+		return true;
+	}
 
-		char sign = cmd[0];
-		std::string com = cmd.substr(1, 5);
-		for (char x : com) {
-			if (!isdigit(x)) {
-				throw std::invalid_argument("Command must be a signed four-digit decimal number (+1234 or -5678)");
-			}
-		}
-		std::string trueCmd = "";
-		switch (sign) {
-		case '-':
-			trueCmd = ("1" + com);
-			break;
-		case '+':
-			trueCmd = ("0" + com);
-			break;
-		default:
+	char sign = cmd[0];
+	std::string com = cmd.substr(1, 5);
+	for (char x : com) {
+		if (!isdigit(x)) {
 			throw std::invalid_argument("Command must be a signed four-digit decimal number (+1234 or -5678)");
 		}
-
-		if (std::stoi(trueCmd) == HALT) {
-			exit(0);
-		}
-		this->InstructionRegister = trueCmd;
-		this->executeInstruction(output_txt);
 	}
+	std::string trueCmd = "";
+	switch (sign) {
+	case '-':
+		trueCmd = ("1" + com);
+		break;
+	case '+':
+		trueCmd = ("0" + com);
+		break;
+	default:
+		throw std::invalid_argument("Command must be a signed four-digit decimal number (+1234 or -5678)");
+	}
+
+	if (std::stoi(trueCmd) == HALT) {
+		exit(0);
+	}
+	this->InstructionRegister = trueCmd;
+	this->executeInstruction(output_txt, input_groupbox, break_groupbox);
+	output_txt->AppendText("Execution Still Paused, (to continue, enter +5100): \n");
+	return false;
 }
 
 //Kristen
@@ -394,8 +413,4 @@ void Simulator::branchZero(int memoryLocation) {
 
 void Simulator::memDump(System::Windows::Forms::RichTextBox^ output_txt) {
 	printMemory(output_txt);
-}
-
-void Simulator::continueExecutionFromForm(int instruction) {
-
 }

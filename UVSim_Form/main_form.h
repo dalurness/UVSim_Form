@@ -2,11 +2,13 @@
 #include <cstddef>
 #include <type_traits>
 #include <iostream>
-//comment out if merge
 #include "simulator.h"
 #include "UserProgram.h"
-#include "output.h"
 #include <msclr\marshal_cppstd.h>
+#include <string.h>
+#include <iomanip>
+#include <sstream>
+#include <fstream>
 
 //comemnt out if merge
 extern Simulator simulator;
@@ -15,7 +17,8 @@ extern UserProgram userProgram;
 using namespace std;
 
 namespace UVSimForm {
-
+	using namespace System::Reflection;
+	using namespace System::IO;
 	using namespace System;
 	using namespace System::ComponentModel;
 	using namespace System::Collections;
@@ -47,7 +50,7 @@ namespace UVSimForm {
 				delete components;
 			}
 		}
-	private: int numberedLineCount = 1;
+	//private: int numberedLineCount = 1;
 	private: System::Windows::Forms::Button^ add_button;
 	private: System::Windows::Forms::Button^ edit_button;
 	public: System::Windows::Forms::ListBox^ listBox;
@@ -60,7 +63,8 @@ namespace UVSimForm {
 	private: System::Windows::Forms::RichTextBox^ location_txt;
 	private: System::Windows::Forms::RichTextBox^ instruction_txt;
 	private: System::Windows::Forms::Label^ label4;
-	private: System::Windows::Forms::Button^ button1;
+	private: System::Windows::Forms::Button^ upload_btn;
+
 	private: System::Windows::Forms::ComboBox^ sign_txt;
 	private: System::Windows::Forms::ContextMenuStrip^ menu_strip;
 	private: System::Windows::Forms::ToolStripMenuItem^ close;
@@ -72,6 +76,10 @@ namespace UVSimForm {
 	private: System::Windows::Forms::TextBox^ input_txt;
 	private: System::Windows::Forms::Button^ submit_btn;
 	private: System::Windows::Forms::Button^ unselect_btn;
+	private: System::Windows::Forms::GroupBox^ input_groupbox;
+	private: System::Windows::Forms::Button^ break_btn;
+	private: System::Windows::Forms::GroupBox^ break_groupbox;
+	private: System::Windows::Forms::TextBox^ break_txt;
 	private: System::ComponentModel::IContainer^ components;
 	private:
 		/// <summary>
@@ -99,7 +107,7 @@ namespace UVSimForm {
 			this->location_txt = (gcnew System::Windows::Forms::RichTextBox());
 			this->instruction_txt = (gcnew System::Windows::Forms::RichTextBox());
 			this->label4 = (gcnew System::Windows::Forms::Label());
-			this->button1 = (gcnew System::Windows::Forms::Button());
+			this->upload_btn = (gcnew System::Windows::Forms::Button());
 			this->sign_txt = (gcnew System::Windows::Forms::ComboBox());
 			this->menu_strip = (gcnew System::Windows::Forms::ContextMenuStrip(this->components));
 			this->close = (gcnew System::Windows::Forms::ToolStripMenuItem());
@@ -111,8 +119,14 @@ namespace UVSimForm {
 			this->input_txt = (gcnew System::Windows::Forms::TextBox());
 			this->submit_btn = (gcnew System::Windows::Forms::Button());
 			this->unselect_btn = (gcnew System::Windows::Forms::Button());
+			this->input_groupbox = (gcnew System::Windows::Forms::GroupBox());
+			this->break_btn = (gcnew System::Windows::Forms::Button());
+			this->break_groupbox = (gcnew System::Windows::Forms::GroupBox());
+			this->break_txt = (gcnew System::Windows::Forms::TextBox());
 			this->menu_strip->SuspendLayout();
 			this->error_box->SuspendLayout();
+			this->input_groupbox->SuspendLayout();
+			this->break_groupbox->SuspendLayout();
 			this->SuspendLayout();
 			// 
 			// add_button
@@ -218,14 +232,15 @@ namespace UVSimForm {
 			this->label4->TabIndex = 12;
 			this->label4->Text = L"Sign";
 			// 
-			// button1
+			// upload_btn
 			// 
-			this->button1->Location = System::Drawing::Point(94, 365);
-			this->button1->Name = L"button1";
-			this->button1->Size = System::Drawing::Size(98, 30);
-			this->button1->TabIndex = 7;
-			this->button1->Text = L"Upload File";
-			this->button1->UseVisualStyleBackColor = true;
+			this->upload_btn->Location = System::Drawing::Point(94, 365);
+			this->upload_btn->Name = L"upload_btn";
+			this->upload_btn->Size = System::Drawing::Size(98, 30);
+			this->upload_btn->TabIndex = 7;
+			this->upload_btn->Text = L"Upload File";
+			this->upload_btn->UseVisualStyleBackColor = true;
+			this->upload_btn->Click += gcnew System::EventHandler(this, &main_form::upload_btn_Click);
 			// 
 			// sign_txt
 			// 
@@ -300,14 +315,14 @@ namespace UVSimForm {
 			// 
 			// input_txt
 			// 
-			this->input_txt->Location = System::Drawing::Point(399, 407);
+			this->input_txt->Location = System::Drawing::Point(6, 4);
 			this->input_txt->Name = L"input_txt";
 			this->input_txt->Size = System::Drawing::Size(100, 22);
 			this->input_txt->TabIndex = 18;
 			// 
 			// submit_btn
 			// 
-			this->submit_btn->Location = System::Drawing::Point(505, 406);
+			this->submit_btn->Location = System::Drawing::Point(119, 4);
 			this->submit_btn->Name = L"submit_btn";
 			this->submit_btn->Size = System::Drawing::Size(75, 23);
 			this->submit_btn->TabIndex = 19;
@@ -317,6 +332,7 @@ namespace UVSimForm {
 			// 
 			// unselect_btn
 			// 
+			this->unselect_btn->Enabled = false;
 			this->unselect_btn->Location = System::Drawing::Point(198, 305);
 			this->unselect_btn->Name = L"unselect_btn";
 			this->unselect_btn->Size = System::Drawing::Size(153, 28);
@@ -325,21 +341,60 @@ namespace UVSimForm {
 			this->unselect_btn->UseVisualStyleBackColor = true;
 			this->unselect_btn->Click += gcnew System::EventHandler(this, &main_form::unselect_btn_Click);
 			// 
+			// input_groupbox
+			// 
+			this->input_groupbox->Controls->Add(this->input_txt);
+			this->input_groupbox->Controls->Add(this->submit_btn);
+			this->input_groupbox->Location = System::Drawing::Point(399, 401);
+			this->input_groupbox->Name = L"input_groupbox";
+			this->input_groupbox->Size = System::Drawing::Size(200, 26);
+			this->input_groupbox->TabIndex = 22;
+			this->input_groupbox->TabStop = false;
+			this->input_groupbox->Visible = false;
+			// 
+			// break_btn
+			// 
+			this->break_btn->Location = System::Drawing::Point(113, 10);
+			this->break_btn->Name = L"break_btn";
+			this->break_btn->Size = System::Drawing::Size(76, 23);
+			this->break_btn->TabIndex = 23;
+			this->break_btn->Text = L"Submit";
+			this->break_btn->UseVisualStyleBackColor = true;
+			this->break_btn->Click += gcnew System::EventHandler(this, &main_form::break_btn_Click);
+			// 
+			// break_groupbox
+			// 
+			this->break_groupbox->Controls->Add(this->break_txt);
+			this->break_groupbox->Controls->Add(this->break_btn);
+			this->break_groupbox->Location = System::Drawing::Point(405, 433);
+			this->break_groupbox->Name = L"break_groupbox";
+			this->break_groupbox->Size = System::Drawing::Size(200, 32);
+			this->break_groupbox->TabIndex = 24;
+			this->break_groupbox->TabStop = false;
+			this->break_groupbox->Visible = false;
+			// 
+			// break_txt
+			// 
+			this->break_txt->Location = System::Drawing::Point(0, 10);
+			this->break_txt->Name = L"break_txt";
+			this->break_txt->Size = System::Drawing::Size(100, 22);
+			this->break_txt->TabIndex = 24;
+			// 
 			// main_form
 			// 
 			this->AutoScaleDimensions = System::Drawing::SizeF(8, 16);
 			this->AutoScaleMode = System::Windows::Forms::AutoScaleMode::Font;
-			this->ClientSize = System::Drawing::Size(1184, 541);
+			this->ClientSize = System::Drawing::Size(1047, 482);
 			this->ContextMenuStrip = this->menu_strip;
+			this->Controls->Add(this->break_groupbox);
+			this->Controls->Add(this->input_groupbox);
 			this->Controls->Add(this->unselect_btn);
-			this->Controls->Add(this->submit_btn);
-			this->Controls->Add(this->input_txt);
 			this->Controls->Add(this->label5);
 			this->Controls->Add(this->output_txt);
 			this->Controls->Add(this->error_box);
 			this->Controls->Add(this->reset_button);
 			this->Controls->Add(this->sign_txt);
-			this->Controls->Add(this->button1);
+			this->Controls->Add(this->upload_btn);
 			this->Controls->Add(this->label4);
 			this->Controls->Add(this->instruction_txt);
 			this->Controls->Add(this->location_txt);
@@ -351,10 +406,15 @@ namespace UVSimForm {
 			this->Controls->Add(this->listBox);
 			this->Controls->Add(this->edit_button);
 			this->Controls->Add(this->add_button);
+			this->Icon = (cli::safe_cast<System::Drawing::Icon^>(resources->GetObject(L"$this.Icon")));
 			this->Name = L"main_form";
 			this->Text = L"UVSim";
 			this->menu_strip->ResumeLayout(false);
 			this->error_box->ResumeLayout(false);
+			this->input_groupbox->ResumeLayout(false);
+			this->input_groupbox->PerformLayout();
+			this->break_groupbox->ResumeLayout(false);
+			this->break_groupbox->PerformLayout();
 			this->ResumeLayout(false);
 			this->PerformLayout();
 
@@ -367,17 +427,69 @@ namespace UVSimForm {
 			location_txt->Text = "";
 		}
 
+		private: void resetProgram() {
+			clearText();
+			listBox->ClearSelected();
+			add_button->Enabled = true;
+			run_button->Enabled = true;
+			upload_btn->Enabled = true;
+			delete_button->Enabled = true;
+			edit_button->Enabled = false;
+			error_box->Visible = false;
+			unselect_btn->Enabled = false;
+		}
+
 		//method that will display the error message
 		public: void showError(String^ message)
 		{
-			error_txt->Text = message;
-			error_box->Visible = true;
-			return;
+			if (message != "") {
+				error_txt->Text = message;
+				error_box->Visible = true;
+				return;
+			}
+			error_box->Visible = false;
 		}
-		
+
+		private: bool checkNumber(String^ str) {
+			System::String^ managedString = str;
+			msclr::interop::marshal_context context;
+			std::string constr = context.marshal_as<std::string>(managedString);
+			for (int i = 0; i < constr.length(); i++)
+				if (isdigit(str[i]) == false)
+					return false;
+			return true;
+		}
+
+		private: bool is_number(const string& s) {
+			std::string::const_iterator it = s.begin();
+			while (it != s.end() && std::isdigit(*it)) ++it;
+			return !s.empty() && it == s.end();
+		}
+
+
 		//method that validates the program
 		private: string validate() {
-			String^ message = "peepeepoopoo";
+			String^ message = "";
+
+			if (instruction_txt->Text->Length != 2) {
+				message = "Instruction input must be two digits";
+				showError(message);
+			}
+
+			if (location_txt->Text->Length < 2 || location_txt->Text->Length > 2) {
+				message = "Location input must be two digits";
+				showError(message);
+			}
+
+			if (input_txt->Text->Length < 4 || location_txt->Text->Length > 4) {
+				message = "Input must be four digits";
+				showError(message);
+			}
+
+			if (input_txt->Text->Length < 4 || location_txt->Text->Length > 4) {
+				message = "Input must be four digits";
+				showError(message);
+			}
 
 			if (sign_txt->Text->Length == 0) {
 				message = "All fields must have input";
@@ -394,28 +506,66 @@ namespace UVSimForm {
 				showError(message);
 			}
 
+			if (input_txt->Text->Length == 0) {
+				message = "All fields must have input";
+				showError(message);
+			}
+
+			if (break_txt->Text->Length == 0) {
+				message = "All fields must have input";
+				showError(message);
+			}
+
+			if (sign_txt->Text != "+" && sign_txt->Text != "-") {
+				message = "The sign must be + or -";
+				showError(message);
+			}
+
+			if (checkNumber(instruction_txt->Text) == false) {
+				message = instruction_txt->Text + " is not a number";
+				showError(message);
+			}
+
+			if (checkNumber(location_txt->Text) == false) {
+				message = location_txt->Text + " is not a number";
+				showError(message);
+			}
+
 			System::String^ managedString = message;
 			msclr::interop::marshal_context context;
 			std::string message_basic = context.marshal_as<std::string>(managedString);
 
 			return message_basic;
-		}			 
+		}
 
 #pragma endregion
+	int nextInstruction = 0;
+
 	//add button
 	private: System::Void add_button_Click(System::Object^ sender, System::EventArgs^ e) {
-		validate();
-		String^ lineNumber = System::Convert::ToString(numberedLineCount) + ": ";
+		string message = validate();
+		if (message != "")
+		{
+			return;
+		}
+
+		//String^ lineNumber = System::Convert::ToString(numberedLineCount) + ": ";
 		String^ instruction = instruction_txt->Text;
 		String^ location = location_txt->Text;
 		String^ sign = sign_txt->Text;
-		listBox->Items->Add(lineNumber + sign + instruction + location);
-		clearText();
-		numberedLineCount++;
+		listBox->Items->Add(/*lineNumber +*/ sign + instruction + location);
+		resetProgram();
+		//numberedLineCount++;
 	}
 
 	//edit button
 	private: System::Void edit_button_Click(System::Object^ sender, System::EventArgs^ e) {	
+		string message = validate();
+		if (message != "")
+		{
+			return;
+		}
+
 		int index = listBox->SelectedIndex;
 
 		String^ instruction = instruction_txt->Text;
@@ -425,13 +575,19 @@ namespace UVSimForm {
 		listBox->Items->RemoveAt(index);
 		listBox->Items->Insert(index, (sign + instruction + location));
 
-		clearText();
-		edit_button->Enabled = false;
-		unselect_btn->Enabled = false;
-		add_button->Enabled = true;
+		resetProgram();
 	}
 
 	private: System::Void run_button_Click(System::Object^ sender, System::EventArgs^ e) {
+		resetProgram();
+		run_button->Enabled = false;
+		upload_btn->Enabled = false;
+		add_button->Enabled = false;
+		edit_button->Enabled = false;
+		delete_button->Enabled = false;
+		unselect_btn->Enabled = false;
+		input_groupbox->Visible = false;
+		break_groupbox->Visible = false;
 
 		int count = listBox->Items->Count;
 		vector<string> instructions;
@@ -440,26 +596,22 @@ namespace UVSimForm {
 			Object ^itemObj = listBox->Items[i];
 			String ^item = itemObj->ToString();
 			string unmanaged = msclr::interop::marshal_as<string>(item);
-			unmanaged = unmanaged.substr(unmanaged.size() - 5, unmanaged.size());
+			//unmanaged = unmanaged.substr(unmanaged.size() - 5, unmanaged.size());
 			instructions.push_back(unmanaged);
 			simulator.loadCommandIntoMemory(unmanaged);
-
 		}		
-		userProgram.loadProgram(&simulator, instructions, output_txt);
-		simulator.executeProgram(output_txt);
+		this->nextInstruction = simulator.executeProgram(output_txt, 0, input_groupbox, break_groupbox);
 	}
 
+	//delete button functionality
 	private: System::Void delete_button_Click(System::Object^ sender, System::EventArgs^ e) {
 		if (listBox->Items->Count > 0)
 			listBox->Items->RemoveAt(listBox->SelectedIndex);
 		else {
-
+			return;
 		}
-		clearText();
-		edit_button->Enabled = false;
-		unselect_btn->Enabled = false;
-		add_button->Enabled = true;
-		numberedLineCount--;
+		resetProgram();
+		//numberedLineCount--;
 	}
 
 	private: System::Void listBox_SelectedIndexChanged(System::Object^ sender, System::EventArgs^ e) {
@@ -467,20 +619,26 @@ namespace UVSimForm {
 		unselect_btn->Enabled = true;
 		add_button->Enabled = false;
 
-		int index = listBox->SelectedIndex;
-		//string value = to_string(listBox->Items);
+		//int index = listBox->SelectedIndex;
+		////string value = to_string(listBox->Items);
 
-		if (index != NULL) {
-			//String^ value = index->ToString();
-			//sign_txt->Text = value;
-		}
+		//if (index != NULL) {
+		//	//String^ value = index->ToString();
+		//	//sign_txt->Text = value;
+		//}
 	}
 
+	//reset everything to start a new program	
 	private: System::Void reset_button_Click(System::Object^ sender, System::EventArgs^ e) {
-		clearText();
+		resetProgram();
 		listBox->Items->Clear();
-		edit_button->Enabled = false;
-		add_button->Enabled = true;
+		output_txt->Text = "";
+		simulator.InstructionCounter = 0;
+		simulator.Accumulator = 0;
+		simulator.InstructionRegister = "0";
+		simulator.OperationCode = 0;
+		simulator.Operand = 0;
+		simulator.memory.clear();
 	}
 
 	private: System::Void menu_strip_Click(System::Object^ sender, System::EventArgs^ e) {
@@ -497,7 +655,60 @@ namespace UVSimForm {
 		String^ instruction = input_txt->Text;
 		std::string unmanagedInstruction = msclr::interop::marshal_as<std::string>(instruction);
 		int intInstruction = std::stoi(unmanagedInstruction);
-		simulator.continueExecutionFromForm(intInstruction);
+
+		simulator.storeAfterRead(intInstruction);
+		input_groupbox->Visible = false;
+		simulator.executeProgram(output_txt, this->nextInstruction, input_groupbox, break_groupbox);
+	}
+
+	private: System::Void break_btn_Click(System::Object^ sender, System::EventArgs^ e) {
+		String^ instruction = break_txt->Text;
+		std::string unmanagedInstruction = msclr::interop::marshal_as<std::string>(instruction);
+	
+		bool cnt = simulator.breakExecution(output_txt, input_groupbox, break_groupbox, unmanagedInstruction);
+		if (cnt) {
+			break_groupbox->Visible = false;
+			simulator.executeProgram(output_txt, this->nextInstruction, input_groupbox, break_groupbox);
+		}
+	}
+	private: System::Void upload_btn_Click(System::Object^ sender, System::EventArgs^ e) {
+		resetProgram();
+
+		//other dude
+		IO::Stream^ myStream;
+		OpenFileDialog^ file = gcnew OpenFileDialog;
+
+		file->InitialDirectory = "c:\\";
+		file->Filter = "txt files (*.txt)|*.txt|All files (*.*)|*.*";
+		file->FilterIndex = 2;
+		file->RestoreDirectory = true;
+
+		if (file->ShowDialog() == System::Windows::Forms::DialogResult::OK)
+		{
+			if ((myStream = file->OpenFile()) != nullptr)
+			{
+				listBox->Items->Clear();
+				String^ filename = "";
+				filename = file->FileName;
+				String^ path = Assembly::GetExecutingAssembly()->Location;
+				path = Path::Combine(Path::GetDirectoryName(path), filename);
+				String^ text = File::ReadAllText(path);
+				listBox->DataSource = File::ReadAllLines(path);
+
+				myStream->Close();
+
+				resetProgram();
+				listBox->ClearSelected();
+			}
+		}
+		else {
+			error_box->Visible = true;
+			error_txt->Text = "Cancelled file opening";
+		}
+
+		edit_button->Enabled = false;
+		add_button->Enabled = true;
+		listBox->ClearSelected();
 	}
 };
 }
